@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV Random</title>
+    <style>
+        /* CSS para que el video ocupe toda la pantalla y sea negro el fondo */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #video-player {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Ajusta el video sin deformarlo */
+        }
+
+        /* Botón opcional para activar sonido si el navegador lo bloquea */
+        #unmute-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+            cursor: pointer;
+            z-index: 10;
+            display: none; /* Oculto por defecto */
+        }
+    </style>
+</head>
+<body>
+
+    <button id="unmute-btn">🔇 Activar Sonido</button>
+
+    <video id="video-player" playsinline>
+        Tu navegador no soporta videos HTML5.
+    </video>
+
+    <script>
+        // --- 1. TU "BASE DE DATOS" ---
+        // Aquí pones las URLs de tus videos (Cloudinary, Supabase, AWS S3, etc.)
+        const listaDeVideos = [
+            "https://res.cloudinary.com/demo/video/upload/v1/dog.mp4",
+            "https://www.w3schools.com/html/mov_bbb.mp4",
+            "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+        ];
+
+        const player = document.getElementById('video-player');
+        const btnUnmute = document.getElementById('unmute-btn');
+
+        // --- 2. LÓGICA PARA ELEGIR VIDEO RANDOM ---
+        function reproducirVideoRandom() {
+            // Elige un número al azar entre 0 y el total de videos
+            const indiceRandom = Math.floor(Math.random() * listaDeVideos.length);
+            
+            // Asigna la URL al reproductor
+            player.src = listaDeVideos[indiceRandom];
+            
+            // Intenta reproducir
+            player.play().catch(error => {
+                console.log("El navegador bloqueó el autoplay con sonido: ", error);
+                // Si falla, mostramos el botón para que el usuario active el sonido
+                btnUnmute.style.display = 'block';
+            });
+        }
+
+        // --- 3. CONFIGURACIÓN INICIAL ---
+        
+        // Cuando termina un video, cargar el siguiente automáticamente
+        player.addEventListener('ended', reproducirVideoRandom);
+
+        // Intentar reproducir apenas carga la página
+        // IMPORTANTE: La mayoría de navegadores obligan a iniciar en MUTE si es autoplay
+        player.muted = true; 
+        reproducirVideoRandom();
+
+        // Botón para activar sonido
+        btnUnmute.addEventListener('click', () => {
+            player.muted = false;
+            btnUnmute.style.display = 'none';
+        });
+
+    </script>
+</body>
+</html>
