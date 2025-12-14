@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TV Random</title>
     <style>
-        /* CSS para que el video ocupe toda la pantalla y sea negro el fondo */
+        /* Estilos generales */
         body, html {
             margin: 0;
             padding: 0;
@@ -13,6 +13,13 @@
             height: 100%;
             overflow: hidden;
             background-color: black;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Contenedor del video */
+        #video-container {
+            width: 100%;
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -21,35 +28,63 @@
         #video-player {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Ajusta el video sin deformarlo */
+            object-fit: contain;
         }
 
-        /* Botón opcional para activar sonido si el navegador lo bloquea */
-        #unmute-btn {
+        /* --- NUEVO: PANTALLA DE INICIO (OVERLAY) --- */
+        /* Esto cubre toda la pantalla al principio */
+        #start-screen {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.2);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9); /* Fondo casi negro */
             color: white;
-            border: 1px solid white;
-            cursor: pointer;
-            z-index: 10;
-            display: none; /* Oculto por defecto */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100; /* Asegura que esté arriba de todo */
+            cursor: pointer; /* Muestra la manito para indicar clic */
+        }
+
+        #start-screen h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #start-screen p {
+            font-size: 1.2rem;
+            color: #aaa;
+            animation: parpadeo 2s infinite; /* Efecto visual simple */
+        }
+
+        /* Animación para el texto "Click para iniciar" */
+        @keyframes parpadeo {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
     </style>
 </head>
 <body>
 
-    <button id="unmute-btn">🔇 Activar Sonido</button>
+    <div id="start-screen">
+        <h1>📺 TV Random</h1>
+        <p>Haz click en la pantalla para encender</p>
+    </div>
 
-    <video id="video-player" playsinline>
-        Tu navegador no soporta videos HTML5.
-    </video>
+    <div id="video-container">
+        <video id="video-player" playsinline>
+            Tu navegador no soporta videos HTML5.
+        </video>
+    </div>
 
     <script>
-        // --- 1. TU "BASE DE DATOS" ---
-        // Aquí pones las URLs de tus videos (Cloudinary, Supabase, AWS S3, etc.)
+        // --- 1. CONFIGURACIÓN ---
         const listaDeVideos = [
             "https://res.cloudinary.com/demo/video/upload/v1/dog.mp4",
             "https://www.w3schools.com/html/mov_bbb.mp4",
@@ -57,38 +92,45 @@
         ];
 
         const player = document.getElementById('video-player');
-        const btnUnmute = document.getElementById('unmute-btn');
+        const startScreen = document.getElementById('start-screen');
+        let tvEncendida = false;
 
-        // --- 2. LÓGICA PARA ELEGIR VIDEO RANDOM ---
-        function reproducirVideoRandom() {
-            // Elige un número al azar entre 0 y el total de videos
+        // --- 2. FUNCIONES ---
+
+        // Función para cargar un video al azar (sin reproducir todavía)
+        function cargarSiguienteVideo() {
             const indiceRandom = Math.floor(Math.random() * listaDeVideos.length);
-            
-            // Asigna la URL al reproductor
             player.src = listaDeVideos[indiceRandom];
-            
-            // Intenta reproducir
-            player.play().catch(error => {
-                console.log("El navegador bloqueó el autoplay con sonido: ", error);
-                // Si falla, mostramos el botón para que el usuario active el sonido
-                btnUnmute.style.display = 'block';
-            });
         }
 
-        // --- 3. CONFIGURACIÓN INICIAL ---
-        
-        // Cuando termina un video, cargar el siguiente automáticamente
-        player.addEventListener('ended', reproducirVideoRandom);
-
-        // Intentar reproducir apenas carga la página
-        // IMPORTANTE: La mayoría de navegadores obligan a iniciar en MUTE si es autoplay
-        player.muted = true; 
-        reproducirVideoRandom();
-
-        // Botón para activar sonido
-        btnUnmute.addEventListener('click', () => {
+        // Función para "Encender la TV" (Se ejecuta solo con el primer click)
+        function encenderTV() {
+            if (tvEncendida) return; // Si ya está prendida, no hacer nada
+            
+            tvEncendida = true;
+            
+            // 1. Ocultamos la pantalla de inicio
+            startScreen.style.display = 'none';
+            
+            // 2. Activamos el sonido (IMPORTANTE: Esto ahora es legal porque el usuario hizo clic)
             player.muted = false;
-            btnUnmute.style.display = 'none';
+            
+            // 3. Reproducimos
+            player.play();
+        }
+
+        // --- 3. LÓGICA DEL FLUJO ---
+
+        // Paso A: Cargar el primer video en memoria apenas se abre la web (pero pausado)
+        cargarSiguienteVideo();
+
+        // Paso B: Esperar a que el usuario haga clic en la pantalla de inicio
+        startScreen.addEventListener('click', encenderTV);
+
+        // Paso C: Cuando termina un video, cargar y reproducir el siguiente AUTOMÁTICAMENTE
+        player.addEventListener('ended', () => {
+            cargarSiguienteVideo();
+            player.play(); // Como la TV ya está "encendida", el navegador permite esto con sonido
         });
 
     </script>
